@@ -74,7 +74,10 @@ def fetch_source(source: dict[str, str]) -> str:
         data = response.read(MAX_SOURCE_BYTES + 1)
     if len(data) > MAX_SOURCE_BYTES:
         raise RuntimeError("source exceeded size limit")
-    return data.def probe_proxy_host(proxy: str, test_host: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | None:
+    return data.decode("utf-8", errors="replace")
+
+
+def probe_proxy_host(proxy: str, test_host: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | None:
     """Return CONNECT+verified TLS latency for one host; None means unusable/too slow."""
     host, raw_port = proxy.rsplit(":", 1)
     started = time.perf_counter()
@@ -85,19 +88,19 @@ def fetch_source(source: dict[str, str]) -> str:
         sock = socket.create_connection((host, int(raw_port)), timeout=timeout)
         sock.settimeout(max(0.05, deadline - time.perf_counter()))
         request = (
-            f"CONNECT {test_host}:{TEST_PORT} HTTP/1.1\\r\\n"
-            f"Host: {test_host}:{TEST_PORT}\\r\\n"
-            "Proxy-Connection: close\\r\\n\\r\\n"
+            f"CONNECT {test_host}:{TEST_PORT} HTTP/1.1\r\n"
+            f"Host: {test_host}:{TEST_PORT}\r\n"
+            "Proxy-Connection: close\r\n\r\n"
         ).encode("ascii")
         sock.sendall(request)
         response = bytearray()
-        while b"\\r\\n\\r\\n" not in response and len(response) < 16384:
+        while b"\r\n\r\n" not in response and len(response) < 16384:
             sock.settimeout(max(0.05, deadline - time.perf_counter()))
             chunk = sock.recv(2048)
             if not chunk:
                 return None
             response.extend(chunk)
-        first_line = bytes(response).split(b"\\r\\n", 1)[0]
+        first_line = bytes(response).split(b"\r\n", 1)[0]
         fields = first_line.split()
         if len(fields) < 2 or fields[1] != b"200":
             return None
@@ -130,9 +133,7 @@ def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | Non
         if latency is None:
             return None
         latencies.append(latency)
-    return max(latencies) not None:
-            sock.close()
-
+    return max(latencies)
 
 def refresh(
     sources: list[dict[str, str]],

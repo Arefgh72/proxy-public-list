@@ -28,7 +28,7 @@ class ProxyListTests(unittest.TestCase):
                 pass
 
             def recv(self, _size):
-                return b"HTTP/1.1 200 Connection Established\\r\\n\\r\\n"
+                return b"HTTP/1.1 200 Connection Established\r\n\r\n"
 
             def close(self):
                 pass
@@ -45,7 +45,7 @@ class ProxyListTests(unittest.TestCase):
                 seen_hosts.append(server_hostname)
                 return FakeTLSSocket()
 
-        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \\
+        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \
              patch.object(update_proxies.ssl, "create_default_context", return_value=FakeTLSContext()):
             latency = update_proxies.probe_proxy("8.8.8.8:8080")
 
@@ -63,7 +63,7 @@ class ProxyListTests(unittest.TestCase):
                 pass
 
             def recv(self, _size):
-                return b"HTTP/1.1 200 Connection Established\\r\\n\\r\\n"
+                return b"HTTP/1.1 200 Connection Established\r\n\r\n"
 
             def close(self):
                 pass
@@ -78,7 +78,7 @@ class ProxyListTests(unittest.TestCase):
                     raise update_proxies.ssl.SSLCertVerificationError("untrusted certificate")
                 return sock
 
-        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \\
+        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \
              patch.object(update_proxies.ssl, "create_default_context", return_value=FakeTLSContext()):
             latency = update_proxies.probe_proxy("8.8.8.8:8080")
 
