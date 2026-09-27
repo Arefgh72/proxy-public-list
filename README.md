@@ -6,5 +6,5 @@ The GitHub Actions workflow gathers candidates from the feeds in [`sources.json`
 
 The scheduled run uses GitHub Actions UTC cron `0 */3 * * *`. A manual run is available from **Actions → Refresh verified proxy list → Run workflow**. The first run also starts automatically after changes are pushed to `main`.
 
-The measured time covers proxy TCP connection, CONNECT, and TLS handshake; it is not an ICMP ping and does not guarantee that a proxy will remain online or allow every destination. Public proxies are untrusted third-party services. Do not send them credentials or sensitive traffic.
+The measured latency is the slowest of the three proxy TCP connection, CONNECT, and TLS handshakes; it is not an ICMP ping and does not guarantee that a proxy will remain online or allow every destination. Public proxies are untrusted third-party services. Do not send them credentials or sensitive traffic.
 Created with AI (luna 6)

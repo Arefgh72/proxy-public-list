@@ -24,7 +24,7 @@ MAX_CANDIDATES = 1200
 MAX_WORKERS = 100
 LATENCY_LIMIT_MS = 1000
 PROBE_TIMEOUT_SECONDS = 1.0
-TEST_HOST = "example.com"
+TEST_HOSTS = ("example.com", "browserleaks.com", "claude.ai")
 TEST_PORT = 443
 
 
@@ -74,11 +74,8 @@ def fetch_source(source: dict[str, str]) -> str:
         data = response.read(MAX_SOURCE_BYTES + 1)
     if len(data) > MAX_SOURCE_BYTES:
         raise RuntimeError("source exceeded size limit")
-    return data.decode("utf-8", errors="replace")
-
-
-def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | None:
-    """Return CONNECT+TLS handshake latency in ms; None means unusable/too slow."""
+    return data.def probe_proxy_host(proxy: str, test_host: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | None:
+    """Return CONNECT+verified TLS latency for one host; None means unusable/too slow."""
     host, raw_port = proxy.rsplit(":", 1)
     started = time.perf_counter()
     deadline = started + timeout
@@ -88,19 +85,19 @@ def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | Non
         sock = socket.create_connection((host, int(raw_port)), timeout=timeout)
         sock.settimeout(max(0.05, deadline - time.perf_counter()))
         request = (
-            f"CONNECT {TEST_HOST}:{TEST_PORT} HTTP/1.1\r\n"
-            f"Host: {TEST_HOST}:{TEST_PORT}\r\n"
-            "Proxy-Connection: close\r\n\r\n"
+            f"CONNECT {test_host}:{TEST_PORT} HTTP/1.1\\r\\n"
+            f"Host: {test_host}:{TEST_PORT}\\r\\n"
+            "Proxy-Connection: close\\r\\n\\r\\n"
         ).encode("ascii")
         sock.sendall(request)
         response = bytearray()
-        while b"\r\n\r\n" not in response and len(response) < 16384:
+        while b"\\r\\n\\r\\n" not in response and len(response) < 16384:
             sock.settimeout(max(0.05, deadline - time.perf_counter()))
             chunk = sock.recv(2048)
             if not chunk:
                 return None
             response.extend(chunk)
-        first_line = bytes(response).split(b"\r\n", 1)[0]
+        first_line = bytes(response).split(b"\\r\\n", 1)[0]
         fields = first_line.split()
         if len(fields) < 2 or fields[1] != b"200":
             return None
@@ -110,7 +107,7 @@ def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | Non
         context = ssl.create_default_context()
         context.set_alpn_protocols(["http/1.1"])
         sock.settimeout(remaining)
-        tls_sock = context.wrap_socket(sock, server_hostname=TEST_HOST)
+        tls_sock = context.wrap_socket(sock, server_hostname=test_host)
         sock = None
         elapsed_ms = round((time.perf_counter() - started) * 1000)
         if elapsed_ms >= LATENCY_LIMIT_MS:
@@ -122,6 +119,18 @@ def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | Non
         if tls_sock is not None:
             tls_sock.close()
         if sock is not None:
+            sock.close()
+
+
+def probe_proxy(proxy: str, timeout: float = PROBE_TIMEOUT_SECONDS) -> int | None:
+    """Return the slowest verified CONNECT+TLS latency across every required target."""
+    latencies: list[int] = []
+    for test_host in TEST_HOSTS:
+        latency = probe_proxy_host(proxy, test_host, timeout)
+        if latency is None:
+            return None
+        latencies.append(latency)
+    return max(latencies) not None:
             sock.close()
 
 
@@ -167,7 +176,7 @@ def refresh(
         "candidate_count": len(ordered),
         "working_count": len(results),
         "latency_limit_ms": LATENCY_LIMIT_MS,
-        "probe": f"HTTP CONNECT + verified TLS to {TEST_HOST}:{TEST_PORT}",
+        "probe": "HTTP CONNECT + verified TLS to " + ", ".join(f"{host}:{TEST_PORT}" for host in TEST_HOSTS),
         "source_errors": source_errors,
     }
     status_path.parent.mkdir(parents=True, exist_ok=True)

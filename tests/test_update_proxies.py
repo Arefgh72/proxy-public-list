@@ -1,6 +1,7 @@
 import importlib.util
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "update_proxies.py"
@@ -15,6 +16,74 @@ class ProxyListTests(unittest.TestCase):
             "http://8.8.8.8:8080\n8.8.8.8:8080\n127.0.0.1:9000\nlocalhost:80\n"
         )
         self.assertEqual(parsed, ["8.8.8.8:8080"])
+
+    def test_probe_requires_verified_tls_for_every_target(self):
+        seen_hosts = []
+
+        class FakeSocket:
+            def settimeout(self, _timeout):
+                pass
+
+            def sendall(self, _data):
+                pass
+
+            def recv(self, _size):
+                return b"HTTP/1.1 200 Connection Established\\r\\n\\r\\n"
+
+            def close(self):
+                pass
+
+        class FakeTLSSocket:
+            def close(self):
+                pass
+
+        class FakeTLSContext:
+            def set_alpn_protocols(self, _protocols):
+                pass
+
+            def wrap_socket(self, sock, server_hostname):
+                seen_hosts.append(server_hostname)
+                return FakeTLSSocket()
+
+        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \\
+             patch.object(update_proxies.ssl, "create_default_context", return_value=FakeTLSContext()):
+            latency = update_proxies.probe_proxy("8.8.8.8:8080")
+
+        self.assertIsNotNone(latency)
+        self.assertEqual(seen_hosts, list(update_proxies.TEST_HOSTS))
+
+    def test_probe_rejects_proxy_when_any_target_certificate_is_untrusted(self):
+        seen_hosts = []
+
+        class FakeSocket:
+            def settimeout(self, _timeout):
+                pass
+
+            def sendall(self, _data):
+                pass
+
+            def recv(self, _size):
+                return b"HTTP/1.1 200 Connection Established\\r\\n\\r\\n"
+
+            def close(self):
+                pass
+
+        class FakeTLSContext:
+            def set_alpn_protocols(self, _protocols):
+                pass
+
+            def wrap_socket(self, sock, server_hostname):
+                seen_hosts.append(server_hostname)
+                if server_hostname == "browserleaks.com":
+                    raise update_proxies.ssl.SSLCertVerificationError("untrusted certificate")
+                return sock
+
+        with patch.object(update_proxies.socket, "create_connection", side_effect=lambda *_a, **_k: FakeSocket()), \\
+             patch.object(update_proxies.ssl, "create_default_context", return_value=FakeTLSContext()):
+            latency = update_proxies.probe_proxy("8.8.8.8:8080")
+
+        self.assertIsNone(latency)
+        self.assertEqual(seen_hosts, ["example.com", "browserleaks.com"])
 
     def test_refresh_sorts_and_writes_only_fast_verified_proxies(self):
         with tempfile.TemporaryDirectory() as tmp:

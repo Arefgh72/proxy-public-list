@@ -25,7 +25,7 @@ jobs:
           python-version: "3.12"
       - name: Test collector and output rules
         run: python -m unittest discover -s tests -v
-      - name: Collect and verify proxies
+      - name: Collect proxies and verify TLS certificates for all targets
         run: python scripts/update_proxies.py
       - name: Commit changed output
         run: |
