@@ -1,0 +1,40 @@
+name: Refresh verified proxy list
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-proxies
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test collector and output rules
+        run: python -m unittest discover -s tests -v
+      - name: Collect and verify proxies
+        run: python scripts/update_proxies.py
+      - name: Commit changed output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add proxies.txt status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Refresh verified proxy list"
+            git push
+          else
+            echo "Proxy output unchanged"
+          fi

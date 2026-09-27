@@ -1,0 +1,11 @@
+{
+  "checked_at_utc": null,
+  "source_count": 4,
+  "source_success_count": 0,
+  "candidate_count": 0,
+  "working_count": 0,
+  "latency_limit_ms": 1000,
+  "probe": "HTTP CONNECT + verified TLS to example.com:443",
+  "source_errors": [],
+  "note": "Waiting for the first successful scheduled or manual refresh."
+}
