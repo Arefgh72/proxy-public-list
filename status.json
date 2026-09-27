@@ -1,9 +1,9 @@
 {
-  "checked_at_utc": "2026-09-27T07:45:50Z",
+  "checked_at_utc": "2026-09-27T07:48:09Z",
   "source_count": 4,
   "source_success_count": 4,
   "candidate_count": 1200,
-  "working_count": 59,
+  "working_count": 62,
   "latency_limit_ms": 1000,
   "probe": "HTTP CONNECT + verified TLS to example.com:443",
   "source_errors": []
