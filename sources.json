@@ -8,11 +8,11 @@
     "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt"
   },
   {
-    "name": "Relayglass HTTP list",
-    "url": "https://raw.githubusercontent.com/relayglass/free-proxy-list/main/protocol/http/http.txt"
+    "name": "TheSpeedX",
+    "url": "https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt"
   },
   {
-    "name": "Databay HTTP list",
-    "url": "https://raw.githubusercontent.com/databay-labs/free-proxy-list/master/http.txt"
+    "name": "Thordata",
+    "url": "https://raw.githubusercontent.com/Thordata/awesome-free-proxy-list/main/proxies/top-trusted.txt"
   }
 ]
