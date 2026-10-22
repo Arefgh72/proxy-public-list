@@ -1,9 +1,9 @@
 {
-  "checked_at_utc": "2026-10-22T02:26:20Z",
+  "checked_at_utc": "2026-10-22T08:06:59Z",
   "source_count": 4,
   "source_success_count": 4,
-  "candidate_count": 5353,
-  "working_count": 5,
+  "candidate_count": 5197,
+  "working_count": 7,
   "latency_limit_ms": 500,
   "probe": "HTTP CONNECT + verified TLS to example.com:443, browserleaks.com:443, claude.ai:443",
   "source_errors": []
